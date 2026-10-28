@@ -7,11 +7,13 @@ import {
   parseEther,
   parseUnits,
   type Address,
+  maxUint256,
 } from 'viem';
 import {
   botTestnet,
   addresses,
   botVaultAbi,
+  wbotAbi,
   publicClient,
   VAULT_DECIMALS,
 } from './contracts';
@@ -23,30 +25,51 @@ interface TxState {
   message?: string;
 }
 
+type TabType = 'native' | 'erc4626' | 'wrapper' | 'calculator';
+type Erc4626Action = 'deposit' | 'mint' | 'withdraw' | 'redeem';
+type WrapperAction = 'wrap' | 'unwrap' | 'donate';
+
 export const App: React.FC = () => {
   const [account, setAccount] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('native');
 
   // Vault data
   const [totalAssets, setTotalAssets] = useState<bigint>(0n);
+  const [totalSupply, setTotalSupply] = useState<bigint>(0n);
   const [sharePrice, setSharePrice] = useState<string>('1.000000');
   const [userVBotBalance, setUserVBotBalance] = useState<bigint>(0n);
   const [userBotValue, setUserBotValue] = useState<bigint>(0n);
   const [userNativeBalance, setUserNativeBalance] = useState<bigint>(0n);
+  const [userWBotBalance, setUserWBotBalance] = useState<bigint>(0n);
+  const [wbotAllowance, setWbotAllowance] = useState<bigint>(0n);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
-  // Inputs
+  // Tab 1: Native inputs
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [withdrawAmount, setWithdrawAmount] = useState<string>('');
-  const [isTransacting, setIsTransacting] = useState(false);
 
-  // Status message
+  // Tab 2: ERC-4626 Standard inputs
+  const [ercAction, setErcAction] = useState<Erc4626Action>('deposit');
+  const [ercAmount, setErcAmount] = useState<string>('');
+  const [ercReceiver, setErcReceiver] = useState<string>('');
+
+  // Tab 3: Wrapper & Yield inputs
+  const [wrapperAction, setWrapperAction] = useState<WrapperAction>('wrap');
+  const [wrapperAmount, setWrapperAmount] = useState<string>('');
+
+  // Tab 4: Calculator inputs
+  const [calcInputType, setCalcInputType] = useState<'assets' | 'shares'>('assets');
+  const [calcInputValue, setCalcInputValue] = useState<string>('1');
+  const [calcResult, setCalcResult] = useState<string>('');
+
+  const [isTransacting, setIsTransacting] = useState(false);
   const [txState, setTxState] = useState<TxState>({ status: 'idle' });
 
   const isWrongChain = chainId !== null && chainId !== botTestnet.id;
 
-  // Initialize wallet connection if already authorized
+  // Initialize wallet connection if available
   useEffect(() => {
     if (typeof window !== 'undefined' && window.ethereum) {
       window.ethereum
@@ -155,6 +178,7 @@ export const App: React.FC = () => {
     try {
       setIsLoadingStats(true);
       const vaultAddress = addresses.vault as Address;
+      const wbotAddress = addresses.wbot as Address;
 
       const [assets, supply] = await Promise.all([
         publicClient.readContract({
@@ -170,6 +194,7 @@ export const App: React.FC = () => {
       ]);
 
       setTotalAssets(assets);
+      setTotalSupply(supply);
 
       // Share price calculation: 1 share (10^24 wei) in assets
       const oneShare = 10n ** BigInt(VAULT_DECIMALS);
@@ -182,11 +207,11 @@ export const App: React.FC = () => {
           functionName: 'convertToAssets',
           args: [oneShare],
         })) as bigint;
-        setSharePrice((Number(formatEther(assetsPerShare))).toFixed(6));
+        setSharePrice(Number(formatEther(assetsPerShare)).toFixed(6));
       }
 
       if (account) {
-        const [vBal, nativeBal] = await Promise.all([
+        const [vBal, nativeBal, wBal, allowance] = await Promise.all([
           publicClient.readContract({
             address: vaultAddress,
             abi: botVaultAbi,
@@ -194,10 +219,24 @@ export const App: React.FC = () => {
             args: [account],
           }) as Promise<bigint>,
           publicClient.getBalance({ address: account }),
+          publicClient.readContract({
+            address: wbotAddress,
+            abi: wbotAbi,
+            functionName: 'balanceOf',
+            args: [account],
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: wbotAddress,
+            abi: wbotAbi,
+            functionName: 'allowance',
+            args: [account, vaultAddress],
+          }) as Promise<bigint>,
         ]);
 
         setUserVBotBalance(vBal);
         setUserNativeBalance(nativeBal);
+        setUserWBotBalance(wBal);
+        setWbotAllowance(allowance);
 
         if (vBal > 0n) {
           const botVal = (await publicClient.readContract({
@@ -224,24 +263,52 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [fetchStats]);
 
-  // Handle Deposit
-  const handleDeposit = async () => {
-    if (!account || !window.ethereum) {
-      connectWallet();
-      return;
-    }
-    if (isWrongChain) {
-      await switchNetwork();
-      return;
-    }
+  // Update calculator result
+  useEffect(() => {
+    const updateCalculator = async () => {
+      if (!calcInputValue || parseFloat(calcInputValue) < 0) {
+        setCalcResult('0');
+        return;
+      }
+      try {
+        const vaultAddress = addresses.vault as Address;
+        if (calcInputType === 'assets') {
+          const assetsWei = parseEther(calcInputValue);
+          const shares = (await publicClient.readContract({
+            address: vaultAddress,
+            abi: botVaultAbi,
+            functionName: 'convertToShares',
+            args: [assetsWei],
+          })) as bigint;
+          setCalcResult(`${Number(formatUnits(shares, VAULT_DECIMALS)).toFixed(6)} vBOT`);
+        } else {
+          const sharesWei = parseUnits(calcInputValue, VAULT_DECIMALS);
+          const assets = (await publicClient.readContract({
+            address: vaultAddress,
+            abi: botVaultAbi,
+            functionName: 'convertToAssets',
+            args: [sharesWei],
+          })) as bigint;
+          setCalcResult(`${Number(formatEther(assets)).toFixed(6)} BOT`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    updateCalculator();
+  }, [calcInputType, calcInputValue, totalAssets, totalSupply]);
+
+  // Tab 1: Handle Native Deposit
+  const handleDepositNative = async () => {
+    if (!account || !window.ethereum) return connectWallet();
+    if (isWrongChain) return switchNetwork();
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
-      setTxState({ status: 'error', message: 'Please enter a valid BOT amount.' });
-      return;
+      return setTxState({ status: 'error', message: 'Enter a valid BOT amount.' });
     }
 
     try {
       setIsTransacting(true);
-      setTxState({ status: 'pending', message: 'Confirm deposit transaction in your wallet...' });
+      setTxState({ status: 'pending', message: 'Confirm depositNative transaction...' });
 
       const walletClient = createWalletClient({
         chain: botTestnet,
@@ -256,53 +323,31 @@ export const App: React.FC = () => {
         account,
       });
 
-      setTxState({
-        status: 'pending',
-        hash,
-        message: 'Transaction submitted. Waiting for confirmation...',
-      });
-
+      setTxState({ status: 'pending', hash, message: 'Deposit pending confirmation...' });
       await publicClient.waitForTransactionReceipt({ hash });
-
-      setTxState({
-        status: 'success',
-        hash,
-        message: `Successfully deposited ${depositAmount} BOT!`,
-      });
+      setTxState({ status: 'success', hash, message: `Deposited ${depositAmount} BOT directly!` });
       setDepositAmount('');
       fetchStats();
     } catch (err: unknown) {
-      console.error(err);
       const error = err as { shortMessage?: string; message?: string };
-      setTxState({
-        status: 'error',
-        message: error.shortMessage || error.message || 'Deposit failed.',
-      });
+      setTxState({ status: 'error', message: error.shortMessage || error.message || 'Deposit failed.' });
     } finally {
       setIsTransacting(false);
     }
   };
 
-  // Handle Withdraw
-  const handleWithdraw = async () => {
-    if (!account || !window.ethereum) {
-      connectWallet();
-      return;
-    }
-    if (isWrongChain) {
-      await switchNetwork();
-      return;
-    }
+  // Tab 1: Handle Native Redeem
+  const handleRedeemNative = async () => {
+    if (!account || !window.ethereum) return connectWallet();
+    if (isWrongChain) return switchNetwork();
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      setTxState({ status: 'error', message: 'Please enter a valid vBOT share amount.' });
-      return;
+      return setTxState({ status: 'error', message: 'Enter a valid vBOT amount.' });
     }
 
     try {
       setIsTransacting(true);
-      setTxState({ status: 'pending', message: 'Confirm withdrawal in your wallet...' });
+      setTxState({ status: 'pending', message: 'Confirm redeemNative transaction...' });
 
-      const sharesToRedeem = parseUnits(withdrawAmount, VAULT_DECIMALS);
       const walletClient = createWalletClient({
         chain: botTestnet,
         transport: custom(window.ethereum),
@@ -312,32 +357,190 @@ export const App: React.FC = () => {
         address: addresses.vault as Address,
         abi: botVaultAbi,
         functionName: 'redeemNative',
-        args: [sharesToRedeem],
+        args: [parseUnits(withdrawAmount, VAULT_DECIMALS)],
         account,
       });
 
-      setTxState({
-        status: 'pending',
-        hash,
-        message: 'Transaction submitted. Waiting for confirmation...',
-      });
-
+      setTxState({ status: 'pending', hash, message: 'Redemption pending confirmation...' });
       await publicClient.waitForTransactionReceipt({ hash });
-
-      setTxState({
-        status: 'success',
-        hash,
-        message: `Successfully redeemed ${withdrawAmount} vBOT shares for native BOT!`,
-      });
+      setTxState({ status: 'success', hash, message: `Redeemed ${withdrawAmount} vBOT for native BOT!` });
       setWithdrawAmount('');
       fetchStats();
     } catch (err: unknown) {
-      console.error(err);
       const error = err as { shortMessage?: string; message?: string };
-      setTxState({
-        status: 'error',
-        message: error.shortMessage || error.message || 'Redemption failed.',
+      setTxState({ status: 'error', message: error.shortMessage || error.message || 'Redemption failed.' });
+    } finally {
+      setIsTransacting(false);
+    }
+  };
+
+  // Tab 2: Approve WBOT for Vault
+  const handleApproveWbot = async () => {
+    if (!account || !window.ethereum) return connectWallet();
+    if (isWrongChain) return switchNetwork();
+
+    try {
+      setIsTransacting(true);
+      setTxState({ status: 'pending', message: 'Approving WBOT spending for BotVault...' });
+
+      const walletClient = createWalletClient({
+        chain: botTestnet,
+        transport: custom(window.ethereum),
       });
+
+      const hash = await walletClient.writeContract({
+        address: addresses.wbot as Address,
+        abi: wbotAbi,
+        functionName: 'approve',
+        args: [addresses.vault as Address, maxUint256],
+        account,
+      });
+
+      setTxState({ status: 'pending', hash, message: 'Waiting for approval confirmation...' });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setTxState({ status: 'success', hash, message: 'WBOT approval granted!' });
+      fetchStats();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string };
+      setTxState({ status: 'error', message: error.shortMessage || error.message || 'Approval failed.' });
+    } finally {
+      setIsTransacting(false);
+    }
+  };
+
+  // Tab 2: Standard ERC-4626 Actions (deposit, mint, withdraw, redeem)
+  const handleErc4626Submit = async () => {
+    if (!account || !window.ethereum) return connectWallet();
+    if (isWrongChain) return switchNetwork();
+    if (!ercAmount || parseFloat(ercAmount) <= 0) {
+      return setTxState({ status: 'error', message: 'Enter a valid amount.' });
+    }
+
+    const receiverAddr = (ercReceiver.trim() || account) as Address;
+
+    try {
+      setIsTransacting(true);
+      const walletClient = createWalletClient({
+        chain: botTestnet,
+        transport: custom(window.ethereum),
+      });
+
+      let hash: Address;
+      if (ercAction === 'deposit') {
+        const assets = parseEther(ercAmount);
+        setTxState({ status: 'pending', message: 'Confirming ERC-4626 deposit(assets, receiver)...' });
+        hash = await walletClient.writeContract({
+          address: addresses.vault as Address,
+          abi: botVaultAbi,
+          functionName: 'deposit',
+          args: [assets, receiverAddr],
+          account,
+        });
+      } else if (ercAction === 'mint') {
+        const shares = parseUnits(ercAmount, VAULT_DECIMALS);
+        setTxState({ status: 'pending', message: 'Confirming ERC-4626 mint(shares, receiver)...' });
+        hash = await walletClient.writeContract({
+          address: addresses.vault as Address,
+          abi: botVaultAbi,
+          functionName: 'mint',
+          args: [shares, receiverAddr],
+          account,
+        });
+      } else if (ercAction === 'withdraw') {
+        const assets = parseEther(ercAmount);
+        setTxState({ status: 'pending', message: 'Confirming ERC-4626 withdraw(assets, receiver, owner)...' });
+        hash = await walletClient.writeContract({
+          address: addresses.vault as Address,
+          abi: botVaultAbi,
+          functionName: 'withdraw',
+          args: [assets, receiverAddr, account],
+          account,
+        });
+      } else {
+        const shares = parseUnits(ercAmount, VAULT_DECIMALS);
+        setTxState({ status: 'pending', message: 'Confirming ERC-4626 redeem(shares, receiver, owner)...' });
+        hash = await walletClient.writeContract({
+          address: addresses.vault as Address,
+          abi: botVaultAbi,
+          functionName: 'redeem',
+          args: [shares, receiverAddr, account],
+          account,
+        });
+      }
+
+      setTxState({ status: 'pending', hash, message: `${ercAction} submitted. Confirming...` });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setTxState({ status: 'success', hash, message: `ERC-4626 ${ercAction} successful!` });
+      setErcAmount('');
+      fetchStats();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string };
+      setTxState({ status: 'error', message: error.shortMessage || error.message || `${ercAction} failed.` });
+    } finally {
+      setIsTransacting(false);
+    }
+  };
+
+  // Tab 3: Wrapper & Yield Donation Actions (Wrap, Unwrap, Donate)
+  const handleWrapperSubmit = async () => {
+    if (!account || !window.ethereum) return connectWallet();
+    if (isWrongChain) return switchNetwork();
+    if (!wrapperAmount || parseFloat(wrapperAmount) <= 0) {
+      return setTxState({ status: 'error', message: 'Enter a valid amount.' });
+    }
+
+    try {
+      setIsTransacting(true);
+      const walletClient = createWalletClient({
+        chain: botTestnet,
+        transport: custom(window.ethereum),
+      });
+
+      let hash: Address;
+      const amountWei = parseEther(wrapperAmount);
+
+      if (wrapperAction === 'wrap') {
+        setTxState({ status: 'pending', message: 'Wrapping native BOT to WBOT...' });
+        hash = await walletClient.writeContract({
+          address: addresses.wbot as Address,
+          abi: wbotAbi,
+          functionName: 'deposit',
+          value: amountWei,
+          account,
+        });
+      } else if (wrapperAction === 'unwrap') {
+        setTxState({ status: 'pending', message: 'Unwrapping WBOT to native BOT...' });
+        hash = await walletClient.writeContract({
+          address: addresses.wbot as Address,
+          abi: wbotAbi,
+          functionName: 'withdraw',
+          args: [amountWei],
+          account,
+        });
+      } else {
+        // Donate WBOT to BotVault contract
+        setTxState({ status: 'pending', message: 'Donating WBOT directly to BotVault to boost share price...' });
+        hash = await walletClient.writeContract({
+          address: addresses.wbot as Address,
+          abi: wbotAbi,
+          functionName: 'transfer',
+          args: [addresses.vault as Address, amountWei],
+          account,
+        });
+      }
+
+      setTxState({ status: 'pending', hash, message: 'Transaction submitted. Confirming...' });
+      await publicClient.waitForTransactionReceipt({ hash });
+      const successMsg =
+        wrapperAction === 'donate'
+          ? `Donated ${wrapperAmount} WBOT! Share price increased for all vault holders.`
+          : `${wrapperAction === 'wrap' ? 'Wrapped' : 'Unwrapped'} ${wrapperAmount} BOT!`;
+      setTxState({ status: 'success', hash, message: successMsg });
+      setWrapperAmount('');
+      fetchStats();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string };
+      setTxState({ status: 'error', message: error.shortMessage || error.message || 'Action failed.' });
     } finally {
       setIsTransacting(false);
     }
@@ -351,7 +554,7 @@ export const App: React.FC = () => {
           <div className="brand-icon">🏦</div>
           <div>
             <h1 className="brand-title">BotVault</h1>
-            <p className="brand-subtitle">ERC-4626 Tokenized Vault for Native BOT</p>
+            <p className="brand-subtitle">Complete ERC-4626 Tokenized Vault & Native DeFi Suite</p>
           </div>
         </div>
 
@@ -373,11 +576,7 @@ export const App: React.FC = () => {
               </div>
             </>
           ) : (
-            <button
-              className="btn btn-primary"
-              onClick={connectWallet}
-              disabled={isConnecting}
-            >
+            <button className="btn btn-primary" onClick={connectWallet} disabled={isConnecting}>
               {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
           )}
@@ -400,10 +599,7 @@ export const App: React.FC = () => {
               </a>
             )}
           </div>
-          <button
-            className="tx-close"
-            onClick={() => setTxState({ status: 'idle' })}
-          >
+          <button className="tx-close" onClick={() => setTxState({ status: 'idle' })}>
             ×
           </button>
         </div>
@@ -417,13 +613,11 @@ export const App: React.FC = () => {
             {isLoadingStats && <small>...</small>}
           </div>
           <div className="stat-value">
-            {Number(formatEther(totalAssets)).toLocaleString(undefined, {
-              maximumFractionDigits: 4,
-            })}
+            {Number(formatEther(totalAssets)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
             <span className="stat-unit">BOT</span>
           </div>
           <div className="stat-sub">
-            Underlying assets managed in WBOT
+            Backing: {Number(formatEther(totalAssets)).toFixed(4)} WBOT
           </div>
         </div>
 
@@ -442,56 +636,232 @@ export const App: React.FC = () => {
 
         <div className="stat-card">
           <div className="stat-label">
-            <span>Your vBOT Balance</span>
+            <span>Total vBOT Supply</span>
           </div>
           <div className="stat-value">
-            {account
-              ? Number(formatUnits(userVBotBalance, VAULT_DECIMALS)).toLocaleString(undefined, {
-                  maximumFractionDigits: 4,
-                })
-              : '—'}
+            {Number(formatUnits(totalSupply, VAULT_DECIMALS)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
             <span className="stat-unit">vBOT</span>
           </div>
           <div className="stat-sub">
-            Vault shares held by your wallet
+            24 decimals (18 + 6 offset)
           </div>
         </div>
 
         <div className="stat-card">
           <div className="stat-label">
-            <span>Your BOT Value</span>
+            <span>Your vBOT Balance</span>
           </div>
           <div className="stat-value">
             {account
-              ? Number(formatEther(userBotValue)).toLocaleString(undefined, {
-                  maximumFractionDigits: 4,
-                })
+              ? Number(formatUnits(userVBotBalance, VAULT_DECIMALS)).toLocaleString(undefined, { maximumFractionDigits: 4 })
               : '—'}
-            <span className="stat-unit">BOT</span>
+            <span className="stat-unit">vBOT</span>
           </div>
           <div className="stat-sub">
-            {account
-              ? `Wallet: ${Number(formatEther(userNativeBalance)).toFixed(4)} BOT`
-              : 'Connect wallet to view'}
+            {account ? `Value: ${Number(formatEther(userBotValue)).toFixed(4)} BOT` : 'Connect wallet'}
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-label">
+            <span>Your Wallet Assets</span>
+          </div>
+          <div className="stat-value" style={{ fontSize: '16px' }}>
+            {account ? `${Number(formatEther(userNativeBalance)).toFixed(3)} BOT` : '—'}
+          </div>
+          <div className="stat-sub">
+            {account ? `${Number(formatEther(userWBotBalance)).toFixed(3)} WBOT` : 'Connect wallet'}
           </div>
         </div>
       </section>
 
-      {/* Actions (Deposit & Withdraw) */}
-      <main className="actions-grid">
-        {/* Deposit Card */}
-        <div className="action-card">
-          <h2 className="card-title">Deposit Native BOT</h2>
+      {/* Navigation Tabs */}
+      <nav className="tabs-nav">
+        <button
+          className={`tab-btn ${activeTab === 'native' ? 'active' : ''}`}
+          onClick={() => setActiveTab('native')}
+        >
+          ⚡ Native BOT (1-Click Vault)
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'erc4626' ? 'active' : ''}`}
+          onClick={() => setActiveTab('erc4626')}
+        >
+          🏦 ERC-4626 Standard (WBOT)
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'wrapper' ? 'active' : ''}`}
+          onClick={() => setActiveTab('wrapper')}
+        >
+          🔄 Wrap & Yield Donation
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'calculator' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calculator')}
+        >
+          🧮 Interactive Calculator
+        </button>
+      </nav>
+
+      {/* TAB 1: Native BOT Flow */}
+      {activeTab === 'native' && (
+        <main className="actions-grid">
+          {/* Deposit Card */}
+          <div className="action-card">
+            <h2 className="card-title">Deposit Native BOT</h2>
+            <p className="card-desc">
+              Directly deposit native BOT via <code>depositNative()</code>. Automatically wraps into WBOT and mints vBOT shares with 0 approvals.
+            </p>
+
+            <div className="input-box">
+              <div className="input-header">
+                <span>Amount</span>
+                {account && <span>Wallet: {Number(formatEther(userNativeBalance)).toFixed(4)} BOT</span>}
+              </div>
+              <div className="input-row">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  className="amount-input"
+                  placeholder="0.0"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  disabled={isTransacting}
+                />
+                <span className="input-currency">BOT</span>
+              </div>
+            </div>
+
+            <div className="preview-row">
+              <span>Estimated Shares Received:</span>
+              <span>
+                {depositAmount && parseFloat(depositAmount) > 0
+                  ? `${(parseFloat(depositAmount) / parseFloat(sharePrice || '1')).toFixed(6)} vBOT`
+                  : '0.00 vBOT'}
+              </span>
+            </div>
+
+            <button
+              className="btn btn-primary card-action-btn"
+              onClick={handleDepositNative}
+              disabled={isTransacting || !depositAmount || parseFloat(depositAmount) <= 0}
+            >
+              {isTransacting ? 'Processing...' : 'Deposit Native BOT'}
+            </button>
+          </div>
+
+          {/* Withdraw Card */}
+          <div className="action-card">
+            <h2 className="card-title">Redeem Shares for Native BOT</h2>
+            <p className="card-desc">
+              Directly exit vault shares via <code>redeemNative()</code>. Burns vBOT shares, unwraps WBOT, and sends native BOT to your wallet.
+            </p>
+
+            <div className="input-box">
+              <div className="input-header">
+                <span>Shares to Redeem</span>
+                {account && (
+                  <span>
+                    Owned: {Number(formatUnits(userVBotBalance, VAULT_DECIMALS)).toFixed(4)} vBOT
+                    {userVBotBalance > 0n && (
+                      <button
+                        className="btn-max"
+                        onClick={() => setWithdrawAmount(formatUnits(userVBotBalance, VAULT_DECIMALS))}
+                      >
+                        MAX
+                      </button>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="input-row">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  className="amount-input"
+                  placeholder="0.0"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  disabled={isTransacting}
+                />
+                <span className="input-currency">vBOT</span>
+              </div>
+            </div>
+
+            <div className="preview-row">
+              <span>Estimated BOT Payout:</span>
+              <span>
+                {withdrawAmount && parseFloat(withdrawAmount) > 0
+                  ? `${(parseFloat(withdrawAmount) * parseFloat(sharePrice || '1')).toFixed(6)} BOT`
+                  : '0.00 BOT'}
+              </span>
+            </div>
+
+            <button
+              className="btn btn-secondary card-action-btn"
+              onClick={handleRedeemNative}
+              disabled={
+                isTransacting ||
+                !withdrawAmount ||
+                parseFloat(withdrawAmount) <= 0 ||
+                userVBotBalance === 0n
+              }
+            >
+              {isTransacting ? 'Processing...' : 'Redeem for Native BOT'}
+            </button>
+          </div>
+        </main>
+      )}
+
+      {/* TAB 2: Standard ERC-4626 Operations with WBOT */}
+      {activeTab === 'erc4626' && (
+        <main className="action-card" style={{ maxWidth: '640px', margin: '0 auto 32px' }}>
+          <h2 className="card-title">Standard ERC-4626 Operations (WBOT)</h2>
           <p className="card-desc">
-            Deposit native BOT directly to receive vBOT shares. No approval needed.
+            Interact with the vault using the standard ERC-4626 asset interface. Supports deposits, minting exact shares, asset withdrawals, and custom receivers.
           </p>
+
+          <div className="sub-toggle">
+            <button
+              className={`sub-toggle-btn ${ercAction === 'deposit' ? 'active' : ''}`}
+              onClick={() => setErcAction('deposit')}
+            >
+              Deposit Assets
+            </button>
+            <button
+              className={`sub-toggle-btn ${ercAction === 'mint' ? 'active' : ''}`}
+              onClick={() => setErcAction('mint')}
+            >
+              Mint Shares
+            </button>
+            <button
+              className={`sub-toggle-btn ${ercAction === 'withdraw' ? 'active' : ''}`}
+              onClick={() => setErcAction('withdraw')}
+            >
+              Withdraw Assets
+            </button>
+            <button
+              className={`sub-toggle-btn ${ercAction === 'redeem' ? 'active' : ''}`}
+              onClick={() => setErcAction('redeem')}
+            >
+              Redeem Shares
+            </button>
+          </div>
 
           <div className="input-box">
             <div className="input-header">
-              <span>Amount</span>
+              <span>
+                {ercAction === 'deposit' || ercAction === 'withdraw'
+                  ? 'WBOT Assets Amount'
+                  : 'vBOT Shares Amount'}
+              </span>
               {account && (
                 <span>
-                  Balance: {Number(formatEther(userNativeBalance)).toFixed(4)} BOT
+                  {ercAction === 'deposit' || ercAction === 'mint'
+                    ? `WBOT: ${Number(formatEther(userWBotBalance)).toFixed(4)}`
+                    : `vBOT: ${Number(formatUnits(userVBotBalance, VAULT_DECIMALS)).toFixed(4)}`}
                 </span>
               )}
             </div>
@@ -502,58 +872,189 @@ export const App: React.FC = () => {
                 min="0"
                 className="amount-input"
                 placeholder="0.0"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
+                value={ercAmount}
+                onChange={(e) => setErcAmount(e.target.value)}
                 disabled={isTransacting}
               />
-              <span className="input-currency">BOT</span>
+              <span className="input-currency">
+                {ercAction === 'deposit' || ercAction === 'withdraw' ? 'WBOT' : 'vBOT'}
+              </span>
             </div>
           </div>
 
-          <div className="preview-row">
-            <span>Estimated Shares Received:</span>
-            <span>
-              {depositAmount && parseFloat(depositAmount) > 0
-                ? `${(parseFloat(depositAmount) / parseFloat(sharePrice || '1')).toFixed(6)} vBOT`
-                : '0.00 vBOT'}
-            </span>
+          <div className="input-box">
+            <div className="input-header">
+              <span>Receiver Address (Optional, defaults to your address)</span>
+            </div>
+            <input
+              type="text"
+              className="text-input"
+              placeholder={account || '0x...'}
+              value={ercReceiver}
+              onChange={(e) => setErcReceiver(e.target.value)}
+              disabled={isTransacting}
+            />
           </div>
+
+          {(ercAction === 'deposit' || ercAction === 'mint') && wbotAllowance < parseEther(ercAmount || '0') && (
+            <div style={{ marginBottom: '14px' }}>
+              <button
+                className="btn btn-warning card-action-btn"
+                onClick={handleApproveWbot}
+                disabled={isTransacting}
+              >
+                Approve BotVault to spend WBOT
+              </button>
+            </div>
+          )}
 
           <button
             className="btn btn-primary card-action-btn"
-            onClick={handleDeposit}
-            disabled={isTransacting || !depositAmount || parseFloat(depositAmount) <= 0}
+            onClick={handleErc4626Submit}
+            disabled={
+              isTransacting ||
+              !ercAmount ||
+              parseFloat(ercAmount) <= 0 ||
+              ((ercAction === 'deposit' || ercAction === 'mint') && wbotAllowance < parseEther(ercAmount || '0'))
+            }
           >
-            {isTransacting ? 'Processing...' : 'Deposit BOT'}
+            {isTransacting ? 'Executing...' : `Execute ${ercAction.toUpperCase()}`}
           </button>
-        </div>
+        </main>
+      )}
 
-        {/* Withdraw Card */}
-        <div className="action-card">
-          <h2 className="card-title">Redeem Shares for BOT</h2>
+      {/* TAB 3: Wrapper & Yield Donation Simulation */}
+      {activeTab === 'wrapper' && (
+        <main className="actions-grid">
+          {/* Wrapper Card */}
+          <div className="action-card">
+            <h2 className="card-title">WBOT Wrapper</h2>
+            <p className="card-desc">
+              Convert native BOT into ERC-20 compliant WBOT tokens, or unwrap WBOT back to native BOT (1:1 ratio).
+            </p>
+
+            <div className="sub-toggle">
+              <button
+                className={`sub-toggle-btn ${wrapperAction === 'wrap' ? 'active' : ''}`}
+                onClick={() => setWrapperAction('wrap')}
+              >
+                Wrap (BOT &rarr; WBOT)
+              </button>
+              <button
+                className={`sub-toggle-btn ${wrapperAction === 'unwrap' ? 'active' : ''}`}
+                onClick={() => setWrapperAction('unwrap')}
+              >
+                Unwrap (WBOT &rarr; BOT)
+              </button>
+            </div>
+
+            <div className="input-box">
+              <div className="input-header">
+                <span>Amount</span>
+                {account && (
+                  <span>
+                    {wrapperAction === 'wrap'
+                      ? `Native: ${Number(formatEther(userNativeBalance)).toFixed(4)} BOT`
+                      : `WBOT: ${Number(formatEther(userWBotBalance)).toFixed(4)} WBOT`}
+                  </span>
+                )}
+              </div>
+              <div className="input-row">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  className="amount-input"
+                  placeholder="0.0"
+                  value={wrapperAmount}
+                  onChange={(e) => setWrapperAmount(e.target.value)}
+                  disabled={isTransacting}
+                />
+                <span className="input-currency">{wrapperAction === 'wrap' ? 'BOT' : 'WBOT'}</span>
+              </div>
+            </div>
+
+            <button
+              className="btn btn-primary card-action-btn"
+              onClick={handleWrapperSubmit}
+              disabled={isTransacting || !wrapperAmount || parseFloat(wrapperAmount) <= 0}
+            >
+              {isTransacting ? 'Processing...' : wrapperAction === 'wrap' ? 'Wrap BOT' : 'Unwrap WBOT'}
+            </button>
+          </div>
+
+          {/* Donation / Yield Simulator Card */}
+          <div className="action-card">
+            <h2 className="card-title">Simulate Vault Yield (Donation)</h2>
+            <p className="card-desc">
+              In ERC-4626, direct asset transfers to the vault increase <code>totalAssets()</code> without minting new shares. This instantly boosts the share price for all existing vault depositors!
+            </p>
+
+            <div className="input-box">
+              <div className="input-header">
+                <span>WBOT Donation Amount</span>
+                {account && <span>WBOT Balance: {Number(formatEther(userWBotBalance)).toFixed(4)}</span>}
+              </div>
+              <div className="input-row">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  className="amount-input"
+                  placeholder="0.0"
+                  value={wrapperAmount}
+                  onChange={(e) => setWrapperAmount(e.target.value)}
+                  disabled={isTransacting}
+                />
+                <span className="input-currency">WBOT</span>
+              </div>
+            </div>
+
+            <div className="preview-row">
+              <span>Effect on Share Price:</span>
+              <span style={{ color: '#34d399', fontWeight: 600 }}>Increases vBOT value for all holders &uarr;</span>
+            </div>
+
+            <button
+              className="btn btn-secondary card-action-btn"
+              onClick={() => {
+                setWrapperAction('donate');
+                handleWrapperSubmit();
+              }}
+              disabled={isTransacting || !wrapperAmount || parseFloat(wrapperAmount) <= 0 || userWBotBalance === 0n}
+            >
+              {isTransacting ? 'Donating...' : 'Donate WBOT to Vault'}
+            </button>
+          </div>
+        </main>
+      )}
+
+      {/* TAB 4: Interactive Calculator & ERC-4626 Previews */}
+      {activeTab === 'calculator' && (
+        <main className="action-card" style={{ maxWidth: '640px', margin: '0 auto 32px' }}>
+          <h2 className="card-title">Live Vault Calculator & Previews</h2>
           <p className="card-desc">
-            Redeem your vBOT shares for native BOT anytime with no strategy lockup.
+            Directly test the mathematical conversion functions of the ERC-4626 contract (<code>convertToShares</code> and <code>convertToAssets</code>) using live on-chain state.
           </p>
+
+          <div className="sub-toggle">
+            <button
+              className={`sub-toggle-btn ${calcInputType === 'assets' ? 'active' : ''}`}
+              onClick={() => setCalcInputType('assets')}
+            >
+              Assets (BOT) &rarr; Shares (vBOT)
+            </button>
+            <button
+              className={`sub-toggle-btn ${calcInputType === 'shares' ? 'active' : ''}`}
+              onClick={() => setCalcInputType('shares')}
+            >
+              Shares (vBOT) &rarr; Assets (BOT)
+            </button>
+          </div>
 
           <div className="input-box">
             <div className="input-header">
-              <span>Shares to Redeem</span>
-              {account && (
-                <span>
-                  Available:{' '}
-                  {Number(formatUnits(userVBotBalance, VAULT_DECIMALS)).toFixed(4)} vBOT
-                  {userVBotBalance > 0n && (
-                    <button
-                      className="btn-max"
-                      onClick={() =>
-                        setWithdrawAmount(formatUnits(userVBotBalance, VAULT_DECIMALS))
-                      }
-                    >
-                      MAX
-                    </button>
-                  )}
-                </span>
-              )}
+              <span>{calcInputType === 'assets' ? 'Input Assets (BOT)' : 'Input Shares (vBOT)'}</span>
             </div>
             <div className="input-row">
               <input
@@ -561,42 +1062,29 @@ export const App: React.FC = () => {
                 step="any"
                 min="0"
                 className="amount-input"
-                placeholder="0.0"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                disabled={isTransacting}
+                placeholder="1.0"
+                value={calcInputValue}
+                onChange={(e) => setCalcInputValue(e.target.value)}
               />
-              <span className="input-currency">vBOT</span>
+              <span className="input-currency">{calcInputType === 'assets' ? 'BOT' : 'vBOT'}</span>
             </div>
           </div>
 
-          <div className="preview-row">
-            <span>Estimated BOT to Receive:</span>
-            <span>
-              {withdrawAmount && parseFloat(withdrawAmount) > 0
-                ? `${(parseFloat(withdrawAmount) * parseFloat(sharePrice || '1')).toFixed(6)} BOT`
-                : '0.00 BOT'}
-            </span>
+          <div className="stat-card" style={{ marginTop: '16px', background: '#0b0f19' }}>
+            <div className="stat-label">Calculated Output:</div>
+            <div className="stat-value" style={{ color: '#60a5fa' }}>
+              {calcResult || 'Calculating...'}
+            </div>
+            <div className="stat-sub">
+              Formula: <code>assets &times; (totalSupply + 10^6) &divide; (totalAssets + 1)</code>
+            </div>
           </div>
-
-          <button
-            className="btn btn-secondary card-action-btn"
-            onClick={handleWithdraw}
-            disabled={
-              isTransacting ||
-              !withdrawAmount ||
-              parseFloat(withdrawAmount) <= 0 ||
-              userVBotBalance === 0n
-            }
-          >
-            {isTransacting ? 'Processing...' : 'Redeem BOT'}
-          </button>
-        </div>
-      </main>
+        </main>
+      )}
 
       {/* Contract Architecture Details */}
       <section className="contract-info">
-        <h3 className="info-title">Deployed Contracts (BOT Testnet)</h3>
+        <h3 className="info-title">Deployed Smart Contracts (BOT Testnet)</h3>
         <div className="info-rows">
           <div className="info-row">
             <span className="info-label">BotVault Contract (vBOT):</span>
@@ -639,7 +1127,7 @@ export const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="app-footer">
-        BotVault &bull; ERC-4626 Native BOT Vault &bull; OpenZeppelin 5.x &bull; Inflation Protected (Offset: 6)
+        BotVault &bull; Complete ERC-4626 Native BOT Suite &bull; OpenZeppelin 5.x &bull; Inflation Shielded (Offset: 6)
       </footer>
     </div>
   );

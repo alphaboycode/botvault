@@ -189,14 +189,26 @@ npm run dev
 The application will run locally at `http://localhost:5173` (or `http://localhost:5174`).
 
 ### Frontend Features
-- **Wallet Connection:** Injected Web3 connection (MetaMask, etc.) with automatic chain detection and one-click "Switch to BOT Testnet" / "Add Network" action.
+- **Wallet Connection:** Injected Web3 connection (MetaMask, Rabby, etc.) with automatic chain detection and one-click "Switch to BOT Testnet" / "Add Network" action.
 - **Live Stats Panel:**
   - Total BOT in vault (`totalAssets`)
   - Share price in BOT per vBOT
+  - Total vBOT supply (`totalSupply`)
   - User's vBOT share balance (`formatUnits(..., 24)`)
-  - User's BOT value (`convertToAssets(...)`)
-  - User's native wallet BOT balance
-- **Deposit Native BOT:** Input amount in BOT, one-click deposit with estimated share preview.
-- **Redeem Native BOT:** Input shares in vBOT with `MAX` button, estimated BOT payout preview, and direct redemption without token approvals.
+  - User's BOT equivalent value (`convertToAssets(...)`)
+  - User's native wallet BOT & WBOT balances
+- **⚡ Native BOT Tab (1-Click Direct Vault):**
+  - Instant `depositNative()` with native BOT (auto-wrapped into WBOT, 0 approval transactions).
+  - Instant `redeemNative()` with `MAX` button (unwraps WBOT and delivers native BOT).
+- **🏦 ERC-4626 Standard Tab (WBOT):**
+  - `deposit(assets, receiver)`: Deposit WBOT assets with automatic 1-click allowance approval.
+  - `mint(shares, receiver)`: Specify exact vBOT shares to mint.
+  - `withdraw(assets, receiver, owner)`: Withdraw exact WBOT assets.
+  - `redeem(shares, receiver, owner)`: Burn exact vBOT shares for WBOT.
+  - Custom recipient address override support.
+- **🔄 Wrap & Yield Simulation Tab:**
+  - Independent native BOT <-> WBOT wrapper (`wbot.deposit` and `wbot.withdraw`).
+  - **Simulate Vault Yield (Donation):** Transfer WBOT directly to the vault to boost `totalAssets` without increasing share supply, actively pumping the share price for all existing shareholders!
+- **🧮 Interactive Calculator Tab:**
+  - Live preview testing for `convertToShares` and `convertToAssets` using on-chain vault state.
 - **Transaction Tracking:** Real-time feedback for Pending, Success, and Error states with direct BohrScan explorer links.
-- **Theme:** Clean, modern, responsive dark theme without heavy third-party UI libraries.
