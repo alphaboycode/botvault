@@ -1,5 +1,5 @@
 .app-container {
-  max-width: 980px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 32px 20px 60px;
 }
@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border-color);
   flex-wrap: wrap;
@@ -122,11 +122,21 @@
   background: var(--bg-card-hover);
 }
 
+.btn-outline {
+  background: transparent;
+  color: var(--accent-primary);
+  border: 1px solid var(--accent-primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.1);
+}
+
 /* Notification / Status Banner */
 .tx-banner {
   padding: 14px 18px;
   border-radius: 10px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -176,16 +186,16 @@
 /* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .stat-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 14px;
-  padding: 20px;
+  padding: 18px;
   position: relative;
   overflow: hidden;
 }
@@ -200,7 +210,7 @@
 }
 
 .stat-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -209,7 +219,7 @@
 }
 
 .stat-unit {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
   font-weight: 500;
   margin-left: 4px;
@@ -221,12 +231,53 @@
   margin-top: 6px;
 }
 
+/* Nav Tabs */
+.tabs-nav {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-secondary);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-btn.active {
+  background: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
 /* Actions Grid (Deposit / Withdraw) */
 .actions-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 @media (max-width: 768px) {
@@ -249,12 +300,44 @@
   font-weight: 600;
   margin-bottom: 6px;
   color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .card-desc {
   font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.sub-toggle {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-primary);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.sub-toggle-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sub-toggle-btn.active {
+  background: var(--bg-card);
+  color: #fff;
+  border: 1px solid var(--border-color);
 }
 
 .input-box {
@@ -298,8 +381,18 @@
   color: var(--text-muted);
 }
 
+.text-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+  font-family: monospace;
+  width: 100%;
+}
+
 .input-currency {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   background: var(--bg-card);
@@ -327,17 +420,22 @@
 .preview-row {
   font-size: 12px;
   color: var(--text-secondary);
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding: 0 4px;
   display: flex;
   justify-content: space-between;
 }
 
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
 .card-action-btn {
   width: 100%;
-  padding: 14px;
+  padding: 13px;
   font-size: 15px;
-  margin-top: auto;
 }
 
 /* Info & Footer */
@@ -346,16 +444,16 @@
   border: 1px solid var(--border-color);
   border-radius: 14px;
   padding: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 
 .info-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .info-rows {
