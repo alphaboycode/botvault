@@ -1,0 +1,177 @@
+================================================================================
+                                BOTVAULT
+        The Premier ERC-4626 Native Liquidity Vault for the BOT Network
+================================================================================
+
+PITCH DECK | OCTOBER 2026
+
+--------------------------------------------------------------------------------
+SLIDE 1: COVER & EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Project Name : BotVault
+Token / Share: Vault BOT (vBOT)
+Asset Token  : Wrapped BOT (WBOT) / Native BOT
+Network      : BOT Testnet (Chain ID: 968) | RPC: https://rpc.bohr.life
+Tagline      : Institutional-Grade Native Vault Primitive for the BOT Ecosystem
+
+EXECUTIVE SUMMARY:
+BotVault is the foundational ERC-4626 tokenized vault infrastructure designed
+specifically for native BOT. It allows users and protocols to seamlessly deposit
+native BOT, receive yield-bearing and composable vault shares (vBOT), and redeem
+native BOT at any time with zero friction and mathematical inflation protection.
+
+--------------------------------------------------------------------------------
+SLIDE 2: THE PROBLEM
+--------------------------------------------------------------------------------
+1. Native Token DeFi Friction:
+   - Native network tokens (BOT) lack standard ERC-20 composability.
+   - Users are forced into tedious multi-step UX: Wrap BOT -> Approve WBOT ->
+     Deposit -> Monitor -> Approve -> Withdraw -> Unwrap.
+
+2. Lack of Standardization:
+   - Fragmented vault implementations create security risks and break protocol
+     interoperability across DEXs and money markets.
+
+3. The ERC-4626 Inflation Attack:
+   - Newly initialized vaults without virtual shares are vulnerable to
+     front-running donation attacks where early depositors lose funds due to
+     share price rounding manipulation.
+
+4. Reentrancy Vulnerabilities:
+   - Native asset transfers (`call{value: ...}`) introduce critical reentrancy
+     vectors unless strictly isolated with checks-effects-interactions and guards.
+
+--------------------------------------------------------------------------------
+SLIDE 3: THE SOLUTION - BOTVAULT
+--------------------------------------------------------------------------------
+BotVault delivers a secure, battle-tested, and developer-friendly vault primitive:
+
+- 1-Click Native Deposit & Redemption:
+  Users deposit native BOT and get vBOT shares instantly. No prior ERC-20
+  token approval needed, saving transaction costs and eliminating user UX friction.
+
+- OpenZeppelin 5.x Audited Foundations:
+  Built upon OpenZeppelin ERC4626, ERC20, and ReentrancyGuard contracts.
+
+- Permanent Inflation Protection:
+  Engineered with an overridden `_decimalsOffset() = 6`. Virtual shares and
+  assets make donation/inflation attacks mathematically unprofitable and secure
+  early liquidity providers.
+
+- Strict Protocol Invariants:
+  Underlying WBOT reserves are strictly locked and verifiable 1:1 against total
+  vault assets at all times.
+
+--------------------------------------------------------------------------------
+SLIDE 4: ARCHITECTURE & TECHNICAL INNOVATION
+--------------------------------------------------------------------------------
+Dual-Contract System Architecture:
+
+      [ User / Protocol ]
+              |          ^
+  depositNative()      redeemNative()
+              v          |
+     +--------------------------+
+     |         BotVault         |  <--- ERC-4626 Standard
+     |  (Shares: vBOT, Dec: 24) |  <--- Decimals Offset: 6 (Virtual Shares)
+     |  ReentrancyGuard (OZ 5)  |  <--- Checks-Effects-Interactions
+     +--------------------------+
+              |          ^
+       deposit()        withdraw()
+              v          |
+     +--------------------------+
+     |           WBOT           |  <--- WETH9-Style Wrapper
+     |  (Asset: WBOT, Dec: 18)  |  <--- 1 WBOT = 1 BOT Native
+     +--------------------------+
+
+Key Technical Specs:
+- Asset: WBOT (18 decimals)
+- Vault Shares: vBOT (24 decimals: 18 asset decimals + 6 offset decimals)
+- Pricing Math:
+    shares = assets * (totalSupply + 10^6) / (totalAssets + 1)
+- Testing Rigor:
+    Passed 128,000+ invariant fuzz testing calls in Foundry with zero reverts
+    or state violations.
+
+--------------------------------------------------------------------------------
+SLIDE 5: LIVE TRACTION & DEPLOYED CONTRACTS
+--------------------------------------------------------------------------------
+BotVault is live, fully functional, and verified on the BOT Testnet (Chain ID 968):
+
+CONTRACT DIRECTORY:
+- WBOT Contract:
+  Address : 0x3dE55Ad41C1e13523d5A6Cc29a4794883D4aeF94
+  Explorer: https://scan.bohr.life/address/0x3dE55Ad41C1e13523d5A6Cc29a4794883D4aeF94
+
+- BotVault Contract:
+  Address : 0xb884156921A5508f9094a96C0848fad0Bd6c9Ff5
+  Explorer: https://scan.bohr.life/address/0xb884156921A5508f9094a96C0848fad0Bd6c9Ff5
+
+ON-CHAIN ACTIVITY:
+- Initial multi-wallet verification executed successfully across 3 accounts.
+- 24 sequential transactions (deposits & redemptions) confirmed on-chain.
+- Current Vault TVL: 0.0375 BOT deposited and actively backed.
+
+--------------------------------------------------------------------------------
+SLIDE 6: USER EXPERIENCE & FRONTEND
+--------------------------------------------------------------------------------
+A sleek, ultra-fast web interface built with modern web technologies:
+- Tech Stack: Vite + React 18 + TypeScript + viem (Zero heavy bloated UI libraries)
+- Injected Wallet Support: Seamless connection for MetaMask, Rabby, and Web3 wallets.
+- 1-Click Network Switcher: Automatically prompts and switches to BOT Testnet (968).
+- Real-Time Stats Dashboard:
+  * Total BOT in Vault (Live RPC on-chain query)
+  * Share Price (BOT per vBOT)
+  * Personal vBOT Share Balance & Net BOT Valuation
+- Native Deposit Card: Instant deposit with estimated share preview.
+- Native Withdraw Card: MAX button with estimated BOT return preview.
+- Transaction Tracking: Live notification banner with direct BohrScan explorer links.
+
+--------------------------------------------------------------------------------
+SLIDE 7: MARKET OPPORTUNITY & ECOSYSTEM IMPACT
+--------------------------------------------------------------------------------
+Why BotVault is Critical for BOHR / BOT Ecosystem:
+
+1. Liquidity Magnet:
+   Provides the base layer for liquid staking tokens (LSTs) and yield vaults.
+2. Money Market Collateral:
+   vBOT adheres strictly to ERC-4626, enabling instant collateral listing on
+   lending protocols (e.g., Aave/Compound forks).
+3. Decentralized Exchange (DEX) Pairs:
+   Enables vBOT / BOT liquidity pools with minimal impermanent loss.
+4. Institutional Readiness:
+   Clean, audited code base, no admin keys, no centralized upgradeability backdoors,
+   and zero hidden fees.
+
+--------------------------------------------------------------------------------
+SLIDE 8: STRATEGIC ROADMAP
+--------------------------------------------------------------------------------
+Q4 2026 (Delivered):
+[x] Solidity ^0.8.24 contract suite with OpenZeppelin 5.x
+[x] Foundry test suite (unit + invariant fuzzing with 128k iterations)
+[x] Deployed and verified on BOT Testnet (Chain ID: 968)
+[x] Vite + React + TS + viem frontend live
+[x] Multi-account stress test (24 on-chain transactions confirmed)
+
+Q1 2027 (Next Steps):
+[ ] Formal external smart contract security audit
+[ ] BOT Mainnet deployment and liquidity bootstrapping
+[ ] Integration with Bohr ecosystem DEXs and money markets
+[ ] Subgraph / Indexer deployment for deep analytics
+
+Q2 2027 (Scaling):
+[ ] Strategy vault adapters (auto-compounding staking rewards)
+[ ] Cross-chain liquidity vault expansion
+[ ] Governance framework for vault parameter optimization
+
+--------------------------------------------------------------------------------
+SLIDE 9: CONTACT & LINKS
+--------------------------------------------------------------------------------
+Website / DApp : http://localhost:5174 (Local Dev)
+Network RPC    : https://rpc.bohr.life
+Explorer       : https://scan.bohr.life
+Contracts Repo : bot-vault/contracts
+Frontend Repo  : bot-vault/frontend
+
+BotVault - Trustless, Standardized, and Frictionless Native Vaults for BOT.
+================================================================================

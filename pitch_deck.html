@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BotVault Pitch Deck</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: 1920px 1080px;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0b0f19;
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      page-break-after: always;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 80px 100px;
+      background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.08) 0%, rgba(11, 15, 25, 1) 70%);
+      overflow: hidden;
+    }
+
+    /* Header & Footer */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slide-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #60a5fa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .slide-number {
+      font-size: 16px;
+      font-weight: 600;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #1e293b;
+      padding-top: 24px;
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .footer-brand {
+      font-weight: 700;
+      color: #94a3b8;
+    }
+
+    /* Content Layouts */
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin: 40px 0;
+    }
+
+    h1.title {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.15;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+    h2.subtitle {
+      font-size: 26px;
+      font-weight: 500;
+      color: #94a3b8;
+      max-width: 1100px;
+      line-height: 1.5;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Cards Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 36px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 28px;
+      margin-top: 36px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-top: 36px;
+    }
+
+    .card {
+      background: #131b2e;
+      border: 1px solid #273553;
+      border-radius: 20px;
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 14px;
+    }
+
+    .card-desc {
+      font-size: 16px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .metric-value {
+      font-size: 42px;
+      font-weight: 800;
+      color: #60a5fa;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 8px;
+    }
+
+    .metric-label {
+      font-size: 15px;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    /* Diagram / Code style */
+    .diagram-box {
+      background: #0d1322;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: #cbd5e1;
+      line-height: 1.8;
+      white-space: pre;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .highlight-box {
+      background: rgba(59, 130, 246, 0.08);
+      border-left: 4px solid #3b82f6;
+      border-radius: 0 16px 16px 0;
+      padding: 24px 32px;
+      margin-top: 24px;
+    }
+
+    .highlight-text {
+      font-size: 18px;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: COVER -->
+  <section class="slide" style="justify-content: center; align-items: center; text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, rgba(11, 15, 25, 1) 70%);">
+    <div style="margin-bottom: 30px;">
+      <div style="font-size: 64px; margin-bottom: 16px;">🏦</div>
+      <div class="slide-tag">DeFi Vault Infrastructure</div>
+    </div>
+    <h1 style="font-size: 80px; font-weight: 900; letter-spacing: -2px; margin-bottom: 24px;">
+      Bot<span class="gradient-text">Vault</span>
+    </h1>
+    <h2 style="font-size: 32px; font-weight: 500; color: #94a3b8; max-width: 900px; margin-bottom: 48px; line-height: 1.4;">
+      The Premier ERC-4626 Native Liquidity Vault for the BOT Network
+    </h2>
+    <div style="display: flex; gap: 24px; align-items: center;">
+      <div class="badge-pill badge-success" style="font-size: 15px; padding: 10px 24px; border-radius: 30px;">
+        ● Live on BOT Testnet (Chain ID 968)
+      </div>
+      <div style="color: #64748b; font-size: 15px; font-family: 'JetBrains Mono', monospace;">
+        OpenZeppelin 5.x &bull; Inflation Protected (Offset 6) &bull; Viem Powered
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: THE PROBLEM -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Market Challenge</div>
+      <div class="slide-number">02 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">The Problem in Native Asset DeFi</h1>
+      <h2 class="subtitle">Emerging Layer-1 ecosystems like BOT face severe friction and security vectors when utilizing native assets in modern decentralized finance.</h2>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">UX Friction & Approvals</h3>
+          <p class="card-desc">Users must wrap BOT to WBOT, approve allowances, deposit, and unwrap. Each extra transaction adds gas fees, latency, and drop-off rates.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Inflation & Donation Attacks</h3>
+          <p class="card-desc">Empty or low-liquidity ERC-4626 vaults without decimal offsets can have share prices manipulated by donation attacks, stealing victim deposits.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🧩</div>
+          <h3 class="card-title">Composability Deficit</h3>
+          <p class="card-desc">Without a standardized ERC-4626 yield/share token, lending protocols, DEXs, and structured yield aggregators cannot easily integrate native BOT.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>Problem Statement</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: THE SOLUTION -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Value Proposition</div>
+      <div class="slide-number">03 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">The Solution: <span class="gradient-text">BotVault</span></h1>
+      <h2 class="subtitle">A battle-tested ERC-4626 vault with direct native BOT handling, institutional security, and automated inflation protection.</h2>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">🚀</div>
+          <h3 class="card-title">1-Click Native BOT Flow</h3>
+          <p class="card-desc">Call <code>depositNative()</code> directly with native BOT to receive <code>vBOT</code> shares, and <code>redeemNative()</code> to exit to BOT. No approval transactions needed.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔒</div>
+          <h3 class="card-title">Permanent Inflation Shield</h3>
+          <p class="card-desc">Overriding <code>_decimalsOffset() = 6</code> creates virtual shares and assets that make donation manipulation attacks mathematically unprofitable.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3 class="card-title">Checks-Effects-Interactions</h3>
+          <p class="card-desc">Full OpenZeppelin <code>ReentrancyGuard</code> integration across all entry points. Safe unwrapping and native transfers prevent reentrancy exploits.</p>
+        </div>
+      </div>
+
+      <div class="highlight-box">
+        <div class="highlight-text">
+          <strong>Key Result:</strong> Users get the seamless experience of native BOT deposits while protocols receive fully compliant, composable ERC-4626 vBOT shares.
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>Core Solution</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: TECHNICAL ARCHITECTURE -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Engineering</div>
+      <div class="slide-number">04 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">Dual-Contract Clean Architecture</h1>
+      <h2 class="subtitle">Modular separation between standard WETH9 asset wrapping and the ERC-4626 tokenized vault engine.</h2>
+      
+      <div class="grid-2" style="align-items: center;">
+        <div class="diagram-box">
+┌─────────────────────────────────────────────────────────┐
+│                    User / Protocol                      │
+└────────────┬───────────────────────────────▲────────────┘
+             │ depositNative()               │ redeemNative()
+             ▼                               │
+┌────────────────────────────────────────────┴────────────┐
+│                       BotVault                          │
+│  - ERC-4626 Standard ("Vault BOT" / vBOT)               │
+│  - Decimals: 24 (18 asset + 6 offset)                   │
+│  - Preview shares BEFORE wrapping native asset          │
+│  - OpenZeppelin ReentrancyGuard                         │
+└────────────┬───────────────────────────────▲────────────┘
+             │ deposit()                     │ withdraw()
+             ▼                               │
+┌────────────────────────────────────────────┴────────────┐
+│                         WBOT                            │
+│  - WETH9-Style Wrapper Contract (1 WBOT = 1 BOT)        │
+│  - Standard ERC-20 Composable (18 Decimals)             │
+└─────────────────────────────────────────────────────────┘</div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="card" style="padding: 24px;">
+            <div style="color: #60a5fa; font-weight: 700; font-size: 18px; margin-bottom: 8px;">Precise Share Valuation</div>
+            <p style="font-size: 15px; color: #94a3b8;">
+              <code>shares = assets * (totalSupply + 10^6) / (totalAssets + 1)</code><br>
+              Round-trip deposit & redemption preserves 100% of user assets without precision loss.
+            </p>
+          </div>
+          <div class="card" style="padding: 24px;">
+            <div style="color: #34d399; font-weight: 700; font-size: 18px; margin-bottom: 8px;">Foundry Invariant Verification</div>
+            <p style="font-size: 15px; color: #94a3b8;">
+              Fuzzed across <strong>128,000 calls</strong> in Foundry: <code>totalAssets</code> strictly equals WBOT balance, and no actor can ever extract more than their fair share.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>Technical Specifications</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: LIVE TESTNET METRICS -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Deployment & Verification</div>
+      <div class="slide-number">05 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">Live On-Chain Deployment & Traction</h1>
+      <h2 class="subtitle">Deployed, verified, and battle-tested with multi-wallet production traffic on the BOT Testnet.</h2>
+      
+      <div class="grid-4">
+        <div class="card" style="text-align: center;">
+          <div class="metric-value">968</div>
+          <div class="metric-label">BOT Testnet Chain ID</div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="metric-value">24</div>
+          <div class="metric-label">Live User Test Transactions</div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="metric-value">100%</div>
+          <div class="metric-label">Foundry Test Pass Rate</div>
+        </div>
+        <div class="card" style="text-align: center;">
+          <div class="metric-value">128k</div>
+          <div class="metric-label">Invariant Fuzz Runs Passed</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 32px; padding: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <span style="font-weight: 700; font-size: 18px; color: #fff;">Verified Contracts on BohrScan</span>
+          <span class="badge-pill badge-success">Verified Source Code</span>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #cbd5e1; line-height: 2;">
+          <div><strong>WBOT Address:</strong> 0x3dE55Ad41C1e13523d5A6Cc29a4794883D4aeF94 &bull; <span style="color: #60a5fa;">scan.bohr.life/address/0x3dE...F94</span></div>
+          <div><strong>BotVault Address:</strong> 0xb884156921A5508f9094a96C0848fad0Bd6c9Ff5 &bull; <span style="color: #60a5fa;">scan.bohr.life/address/0xb88...Ff5</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>Live Traction</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: USER EXPERIENCE & FRONTEND -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Product & UX</div>
+      <div class="slide-number">06 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">Modern, Minimalist Web Dashboard</h1>
+      <h2 class="subtitle">Built with Vite, React 18, TypeScript, and viem. Zero bloated UI libraries for sub-second page loads.</h2>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Real-Time Stats Panel</h3>
+          <p class="card-desc">Live RPC polling for Vault TVL, share price (BOT per vBOT), user's vBOT balance, and actual BOT net asset value.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌐</div>
+          <h3 class="card-title">1-Click Network Switch</h3>
+          <p class="card-desc">Automatically detects wallet chain ID and provides a seamless "Switch to BOT Testnet" / "Add Network" prompt.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🔍</div>
+          <h3 class="card-title">Transaction Tracking</h3>
+          <p class="card-desc">Real-time status banners with animated feedback and direct clickable links to transaction hashes on BohrScan explorer.</p>
+        </div>
+      </div>
+
+      <div class="highlight-box" style="margin-top: 28px;">
+        <div class="highlight-text">
+          <strong>Production Quality:</strong> Typesafe viem client, comprehensive error handling, responsive dark theme, and automated stats refresh after every transaction.
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>User Interface</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: MARKET OPPORTUNITY & ROADMAP -->
+  <section class="slide">
+    <div class="slide-header">
+      <div class="slide-tag">Growth Strategy</div>
+      <div class="slide-number">07 / 08</div>
+    </div>
+    <div class="slide-content">
+      <h1 class="title">Market Opportunity & Strategic Roadmap</h1>
+      <h2 class="subtitle">Positioned as the universal liquidity standard for the expanding BOHR blockchain ecosystem.</h2>
+      
+      <div class="grid-3">
+        <div class="card">
+          <div style="font-size: 14px; font-weight: 700; color: #60a5fa; margin-bottom: 8px;">PHASE 1 (DELIVERED)</div>
+          <h3 class="card-title" style="font-size: 20px;">Foundational Layer</h3>
+          <p class="card-desc">
+            &bull; OpenZeppelin 5.x contracts<br>
+            &bull; 128k invariant fuzz suite<br>
+            &bull; Testnet deployment & BohrScan verification<br>
+            &bull; Vite + React + viem frontend
+          </p>
+        </div>
+
+        <div class="card">
+          <div style="font-size: 14px; font-weight: 700; color: #f59e0b; margin-bottom: 8px;">PHASE 2 (Q1 2027)</div>
+          <h3 class="card-title" style="font-size: 20px;">Mainnet & Audits</h3>
+          <p class="card-desc">
+            &bull; Third-party security audit certification<br>
+            &bull; BOT Mainnet contract deployment<br>
+            &bull; DEX liquidity pools (vBOT / BOT pairs)<br>
+            &bull; Money market collateral listing
+          </p>
+        </div>
+
+        <div class="card">
+          <div style="font-size: 14px; font-weight: 700; color: #a855f7; margin-bottom: 8px;">PHASE 3 (Q2 2027)</div>
+          <h3 class="card-title" style="font-size: 20px;">Yield & Expansion</h3>
+          <p class="card-desc">
+            &bull; Validator staking delegation strategy<br>
+            &bull; Auto-compounding yield mechanisms<br>
+            &bull; Institutional SDK & developer API<br>
+            &bull; Cross-chain vault bridges
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span class="footer-brand">BotVault Pitch Deck</span>
+      <span>Ecosystem Roadmap</span>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: CALL TO ACTION -->
+  <section class="slide" style="justify-content: center; align-items: center; text-align: center;">
+    <div class="slide-tag" style="margin-bottom: 24px;">Get Started Today</div>
+    <h1 style="font-size: 72px; font-weight: 900; letter-spacing: -2px; margin-bottom: 24px;">
+      Unlocking Native BOT Liquidity
+    </h1>
+    <h2 style="font-size: 26px; color: #94a3b8; max-width: 800px; margin-bottom: 50px; line-height: 1.5;">
+      BotVault provides the battle-tested, trustless, and inflation-protected foundation for decentralized finance on BOT.
+    </h2>
+
+    <div style="display: flex; gap: 24px; font-family: 'JetBrains Mono', monospace; font-size: 16px;">
+      <div style="padding: 16px 28px; background: #131b2e; border: 1px solid #273553; border-radius: 12px;">
+        <span style="color: #64748b;">RPC:</span> https://rpc.bohr.life
+      </div>
+      <div style="padding: 16px 28px; background: #131b2e; border: 1px solid #273553; border-radius: 12px;">
+        <span style="color: #64748b;">Explorer:</span> https://scan.bohr.life
+      </div>
+      <div style="padding: 16px 28px; background: #131b2e; border: 1px solid #273553; border-radius: 12px;">
+        <span style="color: #64748b;">Chain ID:</span> 968
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>
