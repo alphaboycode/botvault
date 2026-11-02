@@ -10,7 +10,7 @@ import {
   maxUint256,
 } from 'viem';
 import {
-  botTestnet,
+  botMainnet,
   addresses,
   botVaultAbi,
   wbotAbi,
@@ -67,7 +67,7 @@ export const App: React.FC = () => {
   const [isTransacting, setIsTransacting] = useState(false);
   const [txState, setTxState] = useState<TxState>({ status: 'idle' });
 
-  const isWrongChain = chainId !== null && chainId !== botTestnet.id;
+  const isWrongChain = chainId !== null && chainId !== botMainnet.id;
 
   // Initialize wallet connection if available
   useEffect(() => {
@@ -142,13 +142,13 @@ export const App: React.FC = () => {
     }
   };
 
-  // Switch or Add BOT Testnet
+  // Switch or Add BOT Chain Mainnet
   const switchNetwork = async () => {
     if (!window.ethereum) return;
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${botTestnet.id.toString(16)}` }],
+        params: [{ chainId: `0x${botMainnet.id.toString(16)}` }],
       });
     } catch (switchError: unknown) {
       const err = switchError as { code?: number };
@@ -158,11 +158,11 @@ export const App: React.FC = () => {
             method: 'wallet_addEthereumChain',
             params: [
               {
-                chainId: `0x${botTestnet.id.toString(16)}`,
-                chainName: botTestnet.name,
-                nativeCurrency: botTestnet.nativeCurrency,
-                rpcUrls: botTestnet.rpcUrls.default.http,
-                blockExplorerUrls: [botTestnet.blockExplorers.default.url],
+                chainId: `0x${botMainnet.id.toString(16)}`,
+                chainName: botMainnet.name,
+                nativeCurrency: botMainnet.nativeCurrency,
+                rpcUrls: botMainnet.rpcUrls.default.http,
+                blockExplorerUrls: [botMainnet.blockExplorers.default.url],
               },
             ],
           });
@@ -311,7 +311,7 @@ export const App: React.FC = () => {
       setTxState({ status: 'pending', message: 'Confirm depositNative transaction...' });
 
       const walletClient = createWalletClient({
-        chain: botTestnet,
+        chain: botMainnet,
         transport: custom(window.ethereum),
       });
 
@@ -349,7 +349,7 @@ export const App: React.FC = () => {
       setTxState({ status: 'pending', message: 'Confirm redeemNative transaction...' });
 
       const walletClient = createWalletClient({
-        chain: botTestnet,
+        chain: botMainnet,
         transport: custom(window.ethereum),
       });
 
@@ -384,7 +384,7 @@ export const App: React.FC = () => {
       setTxState({ status: 'pending', message: 'Approving WBOT spending for BotVault...' });
 
       const walletClient = createWalletClient({
-        chain: botTestnet,
+        chain: botMainnet,
         transport: custom(window.ethereum),
       });
 
@@ -421,7 +421,7 @@ export const App: React.FC = () => {
     try {
       setIsTransacting(true);
       const walletClient = createWalletClient({
-        chain: botTestnet,
+        chain: botMainnet,
         transport: custom(window.ethereum),
       });
 
@@ -492,7 +492,7 @@ export const App: React.FC = () => {
     try {
       setIsTransacting(true);
       const walletClient = createWalletClient({
-        chain: botTestnet,
+        chain: botMainnet,
         transport: custom(window.ethereum),
       });
 
@@ -563,12 +563,12 @@ export const App: React.FC = () => {
             <>
               {isWrongChain ? (
                 <button className="btn btn-warning" onClick={switchNetwork}>
-                  Switch to BOT Testnet
+                  Switch to BOT Chain Mainnet
                 </button>
               ) : (
                 <div className="network-badge">
                   <span className="dot" />
-                  BOT Testnet (968)
+                  BOT Chain Mainnet (677)
                 </div>
               )}
               <div className="network-badge">
@@ -1084,7 +1084,7 @@ export const App: React.FC = () => {
 
       {/* Contract Architecture Details */}
       <section className="contract-info">
-        <h3 className="info-title">Deployed Smart Contracts (BOT Testnet)</h3>
+        <h3 className="info-title">Deployed Smart Contracts (BOT Chain Mainnet)</h3>
         <div className="info-rows">
           <div className="info-row">
             <span className="info-label">BotVault Contract (vBOT):</span>
@@ -1127,7 +1127,48 @@ export const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="app-footer">
-        BotVault &bull; Complete ERC-4626 Native BOT Suite &bull; OpenZeppelin 5.x &bull; Inflation Shielded (Offset: 6)
+        <div className="footer-proof-card">
+          <div className="proof-heading">Proof on bot mainnet</div>
+          <div className="proof-grid">
+            <div className="proof-item">
+              <span className="proof-label">Chain id:</span>
+              <span className="proof-value">677</span>
+            </div>
+            <div className="proof-item">
+              <span className="proof-label">Contract:</span>
+              <a
+                className="proof-link code-font"
+                href={`https://scan.botchain.ai/address/${addresses.vault}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {addresses.vault}
+              </a>
+            </div>
+          </div>
+          <div className="footer-external-links">
+            <a
+              href="https://www.botchain.ai/en/"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-nav-link"
+            >
+              BOT Chain Website
+            </a>
+            <span className="footer-bullet">&bull;</span>
+            <a
+              href="https://scan.botchain.ai/"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-nav-link"
+            >
+              BOTScan explorer
+            </a>
+          </div>
+        </div>
+        <div className="footer-copyright">
+          BotVault &bull; Complete ERC-4626 Native BOT Suite &bull; OpenZeppelin 5.x &bull; Inflation Shielded (Offset: 6)
+        </div>
       </footer>
     </div>
   );

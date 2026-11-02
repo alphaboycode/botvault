@@ -1,13 +1,13 @@
 import { createPublicClient, http } from 'viem';
-import { botTestnet } from './chain';
+import { botMainnet, botTestnet } from './chain';
 import addresses from './addresses.json';
 import botVaultAbi from './BotVault.json';
 import wbotAbi from './WBOT.json';
 
-export { botTestnet, addresses, botVaultAbi, wbotAbi };
+export { botMainnet, botTestnet, addresses, botVaultAbi, wbotAbi };
 
 export const publicClient = createPublicClient({
-  chain: botTestnet,
+  chain: botMainnet,
   transport: http(),
 });
 

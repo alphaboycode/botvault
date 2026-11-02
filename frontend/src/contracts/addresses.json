@@ -1,8 +1,8 @@
 {
-  "chainId": 968,
-  "network": "BOT Testnet",
-  "rpcUrl": "https://rpc.bohr.life",
-  "explorerUrl": "https://scan.bohr.life",
-  "wbot": "0x3dE55Ad41C1e13523d5A6Cc29a4794883D4aeF94",
-  "vault": "0xb884156921A5508f9094a96C0848fad0Bd6c9Ff5"
+  "chainId": 677,
+  "network": "BOT Chain Mainnet",
+  "rpcUrl": "https://rpc.botchain.ai",
+  "explorerUrl": "https://scan.botchain.ai",
+  "wbot": "0xb884156921A5508f9094a96C0848fad0Bd6c9Ff5",
+  "vault": "0x8F17F306F248BF123e1653A845e5079cbBC589D1"
 }
