@@ -1146,29 +1146,83 @@ export const App: React.FC = () => {
               </a>
             </div>
           </div>
-          <div className="footer-external-links">
-            <a
-              href="https://www.botchain.ai/en/"
-              target="_blank"
-              rel="noreferrer"
-              className="footer-nav-link"
-            >
-              BOT Chain Website
-            </a>
-            <span className="footer-bullet">&bull;</span>
-            <a
-              href="https://scan.botchain.ai/"
-              target="_blank"
-              rel="noreferrer"
-              className="footer-nav-link"
-            >
-              BOTScan explorer
-            </a>
+        </div>
+
+        {/* Part of the Ecosystem Section */}
+        <section className="ecosystem-section">
+          <div className="ecosystem-card">
+            <div className="ecosystem-badge">PART OF THE ECOSYSTEM</div>
+
+            <div className="ecosystem-logo-outer">
+              <div className="ecosystem-logo-inner">
+                <img src="/bot-logo.svg" alt="BOT Logo" className="ecosystem-logo-img" />
+              </div>
+            </div>
+
+            <div className="ecosystem-title">
+              <span className="ecosystem-title-bot">BOT</span>{' '}
+              <span className="ecosystem-title-chain">Chain</span>
+            </div>
+
+            <p className="ecosystem-tagline">Vaulted, shielded, on chain</p>
+
+            <div className="ecosystem-divider">
+              <span className="ecosystem-divider-line" />
+              <span className="ecosystem-divider-diamond">◆</span>
+              <span className="ecosystem-divider-line" />
+            </div>
+
+            <div className="ecosystem-links">
+              <a
+                href="https://www.botchain.ai/en/"
+                target="_blank"
+                rel="noreferrer"
+                className="ecosystem-link"
+              >
+                <svg
+                  className="ecosystem-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+                <span>botchain.ai</span>
+              </a>
+
+              <a
+                href="https://scan.botchain.ai/"
+                target="_blank"
+                rel="noreferrer"
+                className="ecosystem-link"
+              >
+                <svg
+                  className="ecosystem-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <span>Explorer</span>
+              </a>
+            </div>
+
+            <div className="ecosystem-meta">
+              &copy; 2026 <strong>BOT Chain</strong> &middot; Mainnet &middot; Chain ID <strong>677</strong>
+            </div>
           </div>
-        </div>
-        <div className="footer-copyright">
-          BotVault &bull; Complete ERC-4626 Native BOT Suite &bull; OpenZeppelin 5.x &bull; Inflation Shielded (Offset: 6)
-        </div>
+        </section>
+
       </footer>
     </div>
   );
